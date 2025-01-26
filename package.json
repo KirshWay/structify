@@ -1,0 +1,22 @@
+{
+  "name": "structify",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "pnpm build && node dist/main.js",
+    "build": "tsc"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "chalk": "5.4.1",
+    "ignore": "7.0.3",
+    "inquirer": "12.3.2"
+  },
+  "devDependencies": {
+    "@types/inquirer": "9.0.7",
+    "@types/node": "22.10.10",
+    "typescript": "5.7.3"
+  }
+}

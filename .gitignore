@@ -1,0 +1,38 @@
+# Node.js
+node_modules/
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Logs
+logs/
+*.log
+*.log.*
+
+# System files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Build output
+dist/
+out/
+*.js.map
+
+# Environment files
+.env
+.env.*.local
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*.code-workspace
+
+# TypeScript
+*.tsbuildinfo
+
+# Mac-specific
+*.DS_Store
