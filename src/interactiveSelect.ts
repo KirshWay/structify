@@ -1,7 +1,7 @@
-import fs from "fs";
-import inquirer from "inquirer";
-import path from "path";
-import { ASSET_EXTENSIONS, IGNORE_LIST, isEnvFile } from "./constants.js";
+import fs from 'fs';
+import inquirer from 'inquirer';
+import path from 'path';
+import { ASSET_EXTENSIONS, IGNORE_LIST, isEnvFile } from './constants.js';
 
 export type FileChoice = {
   fullPath: string;
@@ -32,7 +32,7 @@ export async function interactiveSelectDirectory(dirPath: string): Promise<strin
     }
 
     choices.push({
-      name: item.isDirectory() ? name + "/" : name,
+      name: item.isDirectory() ? name + '/' : name,
       value: {
         fullPath,
         isDirectory: item.isDirectory(),
@@ -48,8 +48,8 @@ export async function interactiveSelectDirectory(dirPath: string): Promise<strin
 
   const { selected } = await inquirer.prompt<{ selected: FileChoice[] }>([
     {
-      name: "selected",
-      type: "checkbox",
+      name: 'selected',
+      type: 'checkbox',
       message: `Select items in "${path.basename(dirPath)}":`,
       choices,
     },
@@ -57,18 +57,18 @@ export async function interactiveSelectDirectory(dirPath: string): Promise<strin
 
   for (const choice of selected) {
     if (choice.isDirectory) {
-      const { action } = await inquirer.prompt<{ action: "all" | "expand" }>([
+      const { action } = await inquirer.prompt<{ action: 'all' | 'expand' }>([
         {
-          name: "action",
-          type: "list",
+          name: 'action',
+          type: 'list',
           message: `Folder "${path.basename(choice.fullPath)}": take everything or expand?`,
           choices: [
-            { name: "Take everything", value: "all" },
-            { name: "Expand (select inside)", value: "expand" },
+            { name: 'Take everything', value: 'all' },
+            { name: 'Expand (select inside)', value: 'expand' },
           ],
         },
       ]);
-      if (action === "all") {
+      if (action === 'all') {
         results.push(choice.fullPath);
       } else {
         const subSelections = await interactiveSelectDirectory(choice.fullPath);

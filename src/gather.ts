@@ -1,17 +1,18 @@
-import fs from "fs/promises";
-import { Ignore } from "ignore";
-import path from "path";
-import { isDirectoryAssetsOnly } from "./resourceCheck.js";
+import fs from 'fs/promises';
+import { Ignore } from 'ignore';
+import path from 'path';
+import { IGNORE_LIST, isEnvFile } from './constants.js';
+import { isDirectoryAssetsOnly } from './resourceCheck.js';
 
 export type CollectedItem = {
-  type: "file" | "dir-assets-only";
+  type: 'file' | 'dir-assets-only';
   path: string;
 };
 
 export async function readDirectoryRecursive(
   startDir: string,
   whitelist: string[],
-  gitignore: Ignore | null
+  gitignore: Ignore | null,
 ): Promise<CollectedItem[]> {
   if (whitelist.length === 0) {
     return gatherAll(startDir, gitignore);
@@ -21,12 +22,12 @@ export async function readDirectoryRecursive(
 
 export async function gatherAll(
   dirPath: string,
-  gitignore: Ignore | null
+  gitignore: Ignore | null,
 ): Promise<CollectedItem[]> {
   const results: CollectedItem[] = [];
 
   if (await isDirectoryAssetsOnly(dirPath)) {
-    return [{ type: "dir-assets-only", path: dirPath }];
+    return [{ type: 'dir-assets-only', path: dirPath }];
   }
 
   const items = await fs.readdir(dirPath, { withFileTypes: true });
@@ -35,15 +36,17 @@ export async function gatherAll(
     const name = item.name;
     const fullPath = path.join(dirPath, name);
 
-    if (gitignore && gitignore.ignores(path.relative(dirPath, fullPath))) {
-      continue;
-    }
+    if (IGNORE_LIST.has(name)) continue;
+
+    if (isEnvFile(name)) continue;
+
+    if (gitignore && gitignore.ignores(path.relative(dirPath, fullPath))) continue;
 
     if (item.isDirectory()) {
       const subResults = await gatherAll(fullPath, gitignore);
       results.push(...subResults);
     } else {
-      results.push({ type: "file", path: fullPath });
+      results.push({ type: 'file', path: fullPath });
     }
   }
 
@@ -53,7 +56,7 @@ export async function gatherAll(
 export async function gatherByWhitelist(
   dirPath: string,
   whitelist: string[],
-  gitignore: Ignore | null
+  gitignore: Ignore | null,
 ): Promise<CollectedItem[]> {
   const results: CollectedItem[] = [];
 
@@ -67,6 +70,10 @@ export async function gatherByWhitelist(
     const name = item.name;
     const fullPath = path.join(dirPath, name);
 
+    if (IGNORE_LIST.has(name)) continue;
+
+    if (isEnvFile(name)) continue;
+
     if (gitignore && gitignore.ignores(path.relative(dirPath, fullPath))) {
       continue;
     }
@@ -75,7 +82,7 @@ export async function gatherByWhitelist(
       const subResults = await gatherByWhitelist(fullPath, whitelist, gitignore);
       results.push(...subResults);
     } else if (isFileInWhitelist(fullPath, whitelist)) {
-      results.push({ type: "file", path: fullPath });
+      results.push({ type: 'file', path: fullPath });
     }
   }
 

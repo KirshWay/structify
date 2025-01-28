@@ -1,13 +1,15 @@
-import fs from "fs";
-import path from "path";
-import { ASSET_EXTENSIONS, IGNORE_LIST, isEnvFile } from "./constants.js";
+import fs from 'fs';
+import path from 'path';
+import { ASSET_EXTENSIONS, IGNORE_LIST, isEnvFile } from './constants.js';
 
 export async function isDirectoryAssetsOnly(dirPath: string): Promise<boolean> {
   const items = await fs.promises.readdir(dirPath, { withFileTypes: true });
 
   for (const item of items) {
     const name = item.name;
+
     if (IGNORE_LIST.has(name)) continue;
+
     if (isEnvFile(name)) continue;
 
     const fullPath = path.join(dirPath, name);

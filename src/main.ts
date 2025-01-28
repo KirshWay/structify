@@ -1,20 +1,20 @@
-import chalk from "chalk";
-import fs from "fs";
-import inquirer from "inquirer";
-import path from "path";
+import chalk from 'chalk';
+import fs from 'fs';
+import inquirer from 'inquirer';
+import path from 'path';
 
-import { CollectedItem, readDirectoryRecursive } from "./gather.js";
-import { parseGitignore } from "./gitignoreUtils.js";
-import { interactiveSelectDirectory } from "./interactiveSelect.js";
+import { CollectedItem, readDirectoryRecursive } from './gather.js';
+import { interactiveSelectDirectory } from './interactiveSelect.js';
+import { parseGitignore } from './utils.js';
 
 async function main() {
-  console.log(chalk.green("Welcome to the Structify!"));
+  console.log(chalk.green('Welcome to the Structify!'));
 
   const { projectDir } = await inquirer.prompt<{ projectDir: string }>([
     {
-      name: "projectDir",
-      type: "input",
-      message: "Path to the directory (default = current):",
+      name: 'projectDir',
+      type: 'input',
+      message: 'Path to the directory (default = current):',
       default: process.cwd(),
     },
   ]);
@@ -22,20 +22,20 @@ async function main() {
 
   const gitignore = await parseGitignore(startDir);
 
-  const { mode } = await inquirer.prompt<{ mode: "all" | "partial" }>([
+  const { mode } = await inquirer.prompt<{ mode: 'all' | 'partial' }>([
     {
-      name: "mode",
-      type: "list",
-      message: "Do you want to collect the entire project or select manually?",
+      name: 'mode',
+      type: 'list',
+      message: 'Do you want to collect the entire project or select manually?',
       choices: [
-        { name: "Entire project", value: "all" },
-        { name: "Partial (multi-level selection)", value: "partial" },
+        { name: 'Entire project', value: 'all' },
+        { name: 'Partial (multi-level selection)', value: 'partial' },
       ],
     },
   ]);
 
   let whitelist: string[] = [];
-  if (mode === "partial") {
+  if (mode === 'partial') {
     whitelist = await interactiveSelectDirectory(startDir);
   }
 
@@ -44,15 +44,15 @@ async function main() {
     outputDir: string;
   }>([
     {
-      name: "outputName",
-      type: "input",
-      message: "Name of the output .md file:",
-      default: "output.md",
+      name: 'outputName',
+      type: 'input',
+      message: 'Name of the output .md file:',
+      default: 'output.md',
     },
     {
-      name: "outputDir",
-      type: "input",
-      message: "Where to save the final file?",
+      name: 'outputDir',
+      type: 'input',
+      message: 'Where to save the final file?',
       default: process.cwd(),
     },
   ]);
@@ -60,29 +60,29 @@ async function main() {
 
   const items: CollectedItem[] = await readDirectoryRecursive(startDir, whitelist, gitignore);
 
-  let mdContent = "";
+  let mdContent = '';
 
   for (const item of items) {
-    if (item.type === "dir-assets-only") {
+    if (item.type === 'dir-assets-only') {
       const rel = path.relative(startDir, item.path);
-      mdContent += `|===================|\n`;
+      mdContent += '|===================|\n';
       mdContent += `**Directory**: \`${rel}\`\n\n`;
-      mdContent += `> This directory contains only images/fonts (skipped).\n\n`;
-    } else if (item.type === "file") {
+      mdContent += '> This directory contains only images/fonts (skipped).\n\n';
+    } else if (item.type === 'file') {
       const rel = path.relative(startDir, item.path);
-      const fileData = await fs.promises.readFile(item.path, "utf-8");
-      mdContent += `|===================|\n`;
+      const fileData = await fs.promises.readFile(item.path, 'utf-8');
+      mdContent += '|===================|\n';
       mdContent += `**File**: \`${rel}\`\n\n`;
-      mdContent += "```\n";
+      mdContent += '```\n';
       mdContent += fileData;
-      mdContent += "\n```\n\n";
+      mdContent += '\n```\n\n';
     }
   }
 
-  await fs.promises.writeFile(outputFilePath, mdContent, "utf-8");
+  await fs.promises.writeFile(outputFilePath, mdContent, 'utf-8');
   console.log(chalk.cyan(`Done! File created: ${outputFilePath}`));
 }
 
 main().catch((err) => {
-  console.error(chalk.red("Error:"), err);
+  console.error(chalk.red('Error:'), err);
 });
