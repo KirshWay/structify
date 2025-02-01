@@ -1,4 +1,5 @@
 import chalk from 'chalk';
+import figlet from 'figlet';
 import fs from 'fs';
 import inquirer from 'inquirer';
 import path from 'path';
@@ -8,7 +9,9 @@ import { interactiveSelectDirectory } from './interactiveSelect.js';
 import { parseGitignore } from './utils.js';
 
 async function main() {
-  console.log(chalk.green('Welcome to the Structify!'));
+  console.log(
+    chalk.blue(figlet.textSync('Welcome to the Structify!', { horizontalLayout: 'fitted' })),
+  );
 
   const { projectDir } = await inquirer.prompt<{ projectDir: string }>([
     {

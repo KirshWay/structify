@@ -14,12 +14,14 @@
   "license": "ISC",
   "dependencies": {
     "chalk": "5.4.1",
+    "figlet": "1.8.0",
     "ignore": "7.0.3",
-    "inquirer": "12.3.2"
+    "inquirer": "12.3.3"
   },
   "devDependencies": {
+    "@types/figlet": "1.7.0",
     "@types/inquirer": "9.0.7",
-    "@types/node": "22.10.10",
+    "@types/node": "22.13.0",
     "@typescript-eslint/eslint-plugin": "^8.22.0",
     "@typescript-eslint/parser": "8.22.0",
     "eslint": "9.19.0",
