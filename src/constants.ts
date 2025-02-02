@@ -2,6 +2,7 @@ import path from 'path';
 
 export const IGNORE_LIST = new Set<string>([
   'node_modules',
+  '.git',
   '.DS_Store',
   'README.md',
   '.gitignore',
@@ -25,6 +26,12 @@ export const IMAGE_EXTENSIONS = new Set<string>([
   '.svg',
 ]);
 
+export const VIDEO_EXTENSIONS = new Set<string>(['.mp4', '.mov', '.wmv', '.avi', '.mkv', '.flv']);
+
 export const FONT_EXTENSIONS = new Set<string>(['.woff', '.woff2', '.ttf', '.eot', '.otf']);
 
-export const ASSET_EXTENSIONS = new Set<string>([...IMAGE_EXTENSIONS, ...FONT_EXTENSIONS]);
+export const ASSET_EXTENSIONS = new Set<string>([
+  ...IMAGE_EXTENSIONS,
+  ...FONT_EXTENSIONS,
+  ...VIDEO_EXTENSIONS,
+]);

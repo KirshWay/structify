@@ -9,9 +9,9 @@ import { interactiveSelectDirectory } from './interactiveSelect.js';
 import { parseGitignore } from './utils.js';
 
 async function main() {
-  console.log(
-    chalk.blue(figlet.textSync('Welcome to the Structify!', { horizontalLayout: 'fitted' })),
-  );
+  console.log(chalk.blue(figlet.textSync('Structify!', { horizontalLayout: 'fitted' })));
+
+  console.log(chalk.green('Welcome to the Structify!'));
 
   const { projectDir } = await inquirer.prompt<{ projectDir: string }>([
     {
@@ -21,6 +21,7 @@ async function main() {
       default: process.cwd(),
     },
   ]);
+
   const startDir = path.resolve(projectDir);
 
   const gitignore = await parseGitignore(startDir);

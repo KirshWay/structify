@@ -15,12 +15,13 @@ export async function readDirectoryRecursive(
   gitignore: Ignore | null,
 ): Promise<CollectedItem[]> {
   if (whitelist.length === 0) {
-    return gatherAll(startDir, gitignore);
+    return gatherAll(startDir, startDir, gitignore);
   }
-  return gatherByWhitelist(startDir, whitelist, gitignore);
+  return gatherByWhitelist(startDir, startDir, whitelist, gitignore);
 }
 
 export async function gatherAll(
+  startDir: string,
   dirPath: string,
   gitignore: Ignore | null,
 ): Promise<CollectedItem[]> {
@@ -35,15 +36,18 @@ export async function gatherAll(
   for (const item of items) {
     const name = item.name;
     const fullPath = path.join(dirPath, name);
+    const relativePath = path.relative(startDir, fullPath);
 
-    if (IGNORE_LIST.has(name)) continue;
-
-    if (isEnvFile(name)) continue;
-
-    if (gitignore && gitignore.ignores(path.relative(dirPath, fullPath))) continue;
+    if (
+      IGNORE_LIST.has(name) ||
+      isEnvFile(name) ||
+      (gitignore && gitignore.ignores(relativePath))
+    ) {
+      continue;
+    }
 
     if (item.isDirectory()) {
-      const subResults = await gatherAll(fullPath, gitignore);
+      const subResults = await gatherAll(startDir, fullPath, gitignore);
       results.push(...subResults);
     } else {
       results.push({ type: 'file', path: fullPath });
@@ -54,6 +58,7 @@ export async function gatherAll(
 }
 
 export async function gatherByWhitelist(
+  startDir: string,
   dirPath: string,
   whitelist: string[],
   gitignore: Ignore | null,
@@ -69,17 +74,18 @@ export async function gatherByWhitelist(
   for (const item of items) {
     const name = item.name;
     const fullPath = path.join(dirPath, name);
+    const relativePath = path.relative(startDir, fullPath);
 
-    if (IGNORE_LIST.has(name)) continue;
-
-    if (isEnvFile(name)) continue;
-
-    if (gitignore && gitignore.ignores(path.relative(dirPath, fullPath))) {
+    if (
+      IGNORE_LIST.has(name) ||
+      isEnvFile(name) ||
+      (gitignore && gitignore.ignores(relativePath))
+    ) {
       continue;
     }
 
     if (item.isDirectory()) {
-      const subResults = await gatherByWhitelist(fullPath, whitelist, gitignore);
+      const subResults = await gatherByWhitelist(startDir, fullPath, whitelist, gitignore);
       results.push(...subResults);
     } else if (isFileInWhitelist(fullPath, whitelist)) {
       results.push({ type: 'file', path: fullPath });
