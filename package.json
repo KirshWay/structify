@@ -16,14 +16,14 @@
     "chalk": "5.4.1",
     "figlet": "1.8.0",
     "ignore": "7.0.3",
-    "inquirer": "12.3.3"
+    "inquirer": "12.4.1"
   },
   "devDependencies": {
     "@types/figlet": "1.7.0",
     "@types/inquirer": "9.0.7",
     "@types/node": "22.13.0",
-    "@typescript-eslint/eslint-plugin": "^8.22.0",
-    "@typescript-eslint/parser": "8.22.0",
+    "@typescript-eslint/eslint-plugin": "8.23.0",
+    "@typescript-eslint/parser": "8.23.0",
     "eslint": "9.19.0",
     "eslint-config-prettier": "10.0.1",
     "eslint-plugin-prettier": "5.2.3",
