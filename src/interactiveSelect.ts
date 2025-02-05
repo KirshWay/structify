@@ -31,9 +31,7 @@ export async function interactiveSelectDirectory(dirPath: string): Promise<strin
     const name = item.name;
     const fullPath = path.join(dirPath, name);
 
-    if (IGNORE_LIST.has(name)) continue;
-
-    if (isEnvFile(name)) continue;
+    if (IGNORE_LIST.has(name) || isEnvFile(name)) continue;
 
     if (!item.isDirectory()) {
       const ext = path.extname(name).toLowerCase();
@@ -41,11 +39,8 @@ export async function interactiveSelectDirectory(dirPath: string): Promise<strin
     }
 
     choices.push({
-      name: item.isDirectory() ? name + '/' : name,
-      value: {
-        fullPath,
-        isDirectory: item.isDirectory(),
-      },
+      name: item.isDirectory() ? `${name}/` : name,
+      value: { fullPath, isDirectory: item.isDirectory() },
     });
   }
 
@@ -64,6 +59,7 @@ export async function interactiveSelectDirectory(dirPath: string): Promise<strin
         type: 'checkbox',
         message: `Select items in "${path.basename(dirPath)}":`,
         choices,
+        pageSize: 20,
       },
     ]));
   } catch (err) {

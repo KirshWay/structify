@@ -56,3 +56,45 @@ pnpm build
 ```bash
 pnpm start
 ```
+
+---
+
+### 🏃 Usage
+
+Structify supports two modes of operation: **Interactive Mode** (default) and **Non-Interactive Mode** (using CLI arguments).
+
+#### Interactive Mode (Default)
+
+Simply run:
+
+```bash
+pnpm start
+```
+
+In this mode, you will be prompted for:
+
+- **Project Directory:** The path to the project (default: current directory).
+- **Collection Mode:** Choose between collecting the entire project or a selective, multi-level selection.
+- **Output Settings:** Provide the name and destination directory for the generated Markdown file.
+
+#### Non-Interactive Mode
+
+For automated or scripted usage, you can disable interactive prompts by using the `--no-interactive` flag along with the required options. For example:
+
+```bash
+pnpm start --no-interactive --project /absolute/path/to/project --mode all --output structure.md --outdir /absolute/path/to/save
+```
+
+**Options:**
+
+- `--no-interactive`: Disables interactive prompts.
+- `--project <path>`: Specifies the project directory to process.
+- `--mode <mode>`: Sets the collection mode. Use `all` to collect the entire project. _(Note: Non-interactive mode does not support partial selection.)_
+- `--output <filename>`: The name of the output Markdown file (default: `output.md`).
+- `--outdir <directory>`: The directory where the output file will be saved.
+
+To view the full list of available CLI options, run:
+
+```bash
+pnpm start -- --help
+```
