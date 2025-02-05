@@ -27,11 +27,23 @@ export async function gatherAll(
 ): Promise<CollectedItem[]> {
   const results: CollectedItem[] = [];
 
-  if (await isDirectoryAssetsOnly(dirPath)) {
-    return [{ type: 'dir-assets-only', path: dirPath }];
+  try {
+    if (await isDirectoryAssetsOnly(dirPath)) {
+      return [{ type: 'dir-assets-only', path: dirPath }];
+    }
+  } catch (err) {
+    console.error(`Error checking directory assets in ${dirPath}:`, err);
+
+    throw err;
   }
 
-  const items = await fs.readdir(dirPath, { withFileTypes: true });
+  let items;
+  try {
+    items = await fs.readdir(dirPath, { withFileTypes: true });
+  } catch (err) {
+    console.error(`Error reading directory ${dirPath}:`, err);
+    throw err;
+  }
 
   for (const item of items) {
     const name = item.name;
@@ -47,8 +59,14 @@ export async function gatherAll(
     }
 
     if (item.isDirectory()) {
-      const subResults = await gatherAll(startDir, fullPath, gitignore);
-      results.push(...subResults);
+      try {
+        const subResults = await gatherAll(startDir, fullPath, gitignore);
+        results.push(...subResults);
+      } catch (err) {
+        console.error(`Error processing subdirectory ${fullPath}:`, err);
+
+        throw err;
+      }
     } else {
       results.push({ type: 'file', path: fullPath });
     }
@@ -69,7 +87,14 @@ export async function gatherByWhitelist(
     return results;
   }
 
-  const items = await fs.readdir(dirPath, { withFileTypes: true });
+  let items;
+  try {
+    items = await fs.readdir(dirPath, { withFileTypes: true });
+  } catch (err) {
+    console.error(`Error reading directory ${dirPath}:`, err);
+
+    throw err;
+  }
 
   for (const item of items) {
     const name = item.name;
@@ -85,8 +110,14 @@ export async function gatherByWhitelist(
     }
 
     if (item.isDirectory()) {
-      const subResults = await gatherByWhitelist(startDir, fullPath, whitelist, gitignore);
-      results.push(...subResults);
+      try {
+        const subResults = await gatherByWhitelist(startDir, fullPath, whitelist, gitignore);
+        results.push(...subResults);
+      } catch (err) {
+        console.error(`Error processing subdirectory ${fullPath}:`, err);
+
+        throw err;
+      }
     } else if (isFileInWhitelist(fullPath, whitelist)) {
       results.push({ type: 'file', path: fullPath });
     }

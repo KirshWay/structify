@@ -14,6 +14,9 @@ export async function parseGitignore(projectDir: string): Promise<Ignore | null>
     if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
       return null;
     }
+
+    console.error(`Error reading .gitignore from ${gitignorePath}:`, err);
+
     throw err;
   }
 }

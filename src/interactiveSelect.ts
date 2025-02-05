@@ -15,7 +15,16 @@ type ChoiceItem = {
 
 export async function interactiveSelectDirectory(dirPath: string): Promise<string[]> {
   const results: string[] = [];
-  const items = await fs.promises.readdir(dirPath, { withFileTypes: true });
+  let items;
+
+  try {
+    items = await fs.promises.readdir(dirPath, { withFileTypes: true });
+  } catch (err) {
+    console.error(`Error reading directory ${dirPath}:`, err);
+
+    throw err;
+  }
+
   let choices: ChoiceItem[] = [];
 
   for (const item of items) {
@@ -46,33 +55,57 @@ export async function interactiveSelectDirectory(dirPath: string): Promise<strin
     return results;
   }
 
-  const { selected } = await inquirer.prompt<{ selected: FileChoice[] }>([
-    {
-      name: 'selected',
-      type: 'checkbox',
-      message: `Select items in "${path.basename(dirPath)}":`,
-      choices,
-    },
-  ]);
+  let selected;
+
+  try {
+    ({ selected } = await inquirer.prompt<{ selected: FileChoice[] }>([
+      {
+        name: 'selected',
+        type: 'checkbox',
+        message: `Select items in "${path.basename(dirPath)}":`,
+        choices,
+      },
+    ]));
+  } catch (err) {
+    console.error(`Error during interactive selection in ${dirPath}:`, err);
+
+    throw err;
+  }
 
   for (const choice of selected) {
     if (choice.isDirectory) {
-      const { action } = await inquirer.prompt<{ action: 'all' | 'expand' }>([
-        {
-          name: 'action',
-          type: 'list',
-          message: `Folder "${path.basename(choice.fullPath)}": take everything or expand?`,
-          choices: [
-            { name: 'Take everything', value: 'all' },
-            { name: 'Expand (select inside)', value: 'expand' },
-          ],
-        },
-      ]);
+      let action;
+
+      try {
+        ({ action } = await inquirer.prompt<{ action: 'all' | 'expand' }>([
+          {
+            name: 'action',
+            type: 'list',
+            message: `Folder "${path.basename(choice.fullPath)}": take everything or expand?`,
+            choices: [
+              { name: 'Take everything', value: 'all' },
+              { name: 'Expand (select inside)', value: 'expand' },
+            ],
+          },
+        ]));
+      } catch (err) {
+        console.error(`Error selecting action for directory ${choice.fullPath}:`, err);
+
+        throw err;
+      }
+
       if (action === 'all') {
         results.push(choice.fullPath);
       } else {
-        const subSelections = await interactiveSelectDirectory(choice.fullPath);
-        results.push(...subSelections);
+        try {
+          const subSelections = await interactiveSelectDirectory(choice.fullPath);
+
+          results.push(...subSelections);
+        } catch (err) {
+          console.error(`Error processing nested directory ${choice.fullPath}:`, err);
+
+          throw err;
+        }
       }
     } else {
       results.push(choice.fullPath);
