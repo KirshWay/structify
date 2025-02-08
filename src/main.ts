@@ -14,6 +14,7 @@ type Options = {
   whitelist: string[];
   outputFilePath: string;
   verbose: boolean;
+  format: string;
 };
 
 const program = new Command();
@@ -21,18 +22,19 @@ const program = new Command();
 program
   .name('structify')
   .description(
-    `CLI tool to document, organize and archive your project structure into a single Markdown file.
-
+    `CLI tool to document, organize and archive your project structure into a single file.
+    
 Examples:
-  $ structify --project /path/to/project --mode all --output structure.md --outdir ./docs
-  $ structify --project /path/to/project --mode partial --verbose`,
+  $ structify --project /path/to/project --mode all --output structure --outdir ./docs --format md
+  $ structify --project /path/to/project --mode all --output structure --outdir ./docs --format txt`,
   )
   .version('1.0.0')
   .option('-p, --project <path>', 'Path to the project directory', process.cwd())
   .option('-m, --mode <mode>', 'Collection mode: "all" or "partial"', 'all')
-  .option('-o, --output <filename>', 'Output Markdown file name', 'output.md')
+  .option('-o, --output <filename>', 'Output file name', 'output')
   .option('-d, --outdir <directory>', 'Directory to save the output file', process.cwd())
   .option('-v, --verbose', 'Enable verbose logging', false)
+  .option('--format <format>', 'Output format: txt or md', 'md')
   .option('--no-interactive', 'Disable interactive mode (use CLI options only)');
 
 program.parse(process.argv);
@@ -48,6 +50,7 @@ async function getInteractiveOptions(): Promise<Options> {
       default: process.cwd(),
     },
   ]);
+
   const startDir = path.resolve(projectDir);
 
   try {
@@ -77,15 +80,16 @@ async function getInteractiveOptions(): Promise<Options> {
     whitelist = await interactiveSelectDirectory(startDir);
   }
 
-  const { outputName, outputDir } = await inquirer.prompt<{
+  const { outputName, outputDir, format } = await inquirer.prompt<{
     outputName: string;
     outputDir: string;
+    format: string;
   }>([
     {
       name: 'outputName',
       type: 'input',
-      message: 'Name of the output .md file:',
-      default: 'output.md',
+      message: 'Name of the output file:',
+      default: 'output',
     },
     {
       name: 'outputDir',
@@ -93,22 +97,26 @@ async function getInteractiveOptions(): Promise<Options> {
       message: 'Where to save the final file?',
       default: process.cwd(),
     },
+    {
+      name: 'format',
+      type: 'list',
+      message: 'Select output format:',
+      choices: [
+        { name: '.md (Markdown)', value: 'md' },
+        { name: '.txt (Plain Text)', value: 'txt' },
+      ],
+      default: 'md',
+    },
   ]);
 
-  const outputFilePath = path.join(path.resolve(outputDir), outputName);
+  const finalOutputName = path.extname(outputName) ? outputName : `${outputName}.${format}`;
+  const outputFilePath = path.join(path.resolve(outputDir), finalOutputName);
 
-  return {
-    startDir,
-    mode,
-    whitelist,
-    outputFilePath,
-    verbose: cliOptions.verbose,
-  };
+  return { startDir, mode, whitelist, outputFilePath, verbose: cliOptions.verbose, format };
 }
 
 async function getNonInteractiveOptions(): Promise<Options> {
   const startDir = path.resolve(cliOptions.project);
-
   try {
     await fs.promises.access(startDir, fs.constants.F_OK);
   } catch (err) {
@@ -121,6 +129,7 @@ async function getNonInteractiveOptions(): Promise<Options> {
   }
 
   const mode: 'all' | 'partial' = cliOptions.mode;
+
   if (mode !== 'all' && mode !== 'partial') {
     console.error(chalk.red('Invalid mode provided. Use "all" or "partial".'));
     process.exit(1);
@@ -133,7 +142,12 @@ async function getNonInteractiveOptions(): Promise<Options> {
     );
     process.exit(1);
   }
-  const outputFilePath = path.join(path.resolve(cliOptions.outdir), cliOptions.output);
+
+  const outputNameCli = cliOptions.output;
+  const finalOutputNameCli = path.extname(outputNameCli)
+    ? outputNameCli
+    : `${outputNameCli}.${cliOptions.format}`;
+  const outputFilePath = path.join(path.resolve(cliOptions.outdir), finalOutputNameCli);
 
   return {
     startDir,
@@ -141,19 +155,20 @@ async function getNonInteractiveOptions(): Promise<Options> {
     whitelist: [],
     outputFilePath,
     verbose: cliOptions.verbose,
+    format: cliOptions.format,
   };
 }
 
-async function generateMarkdownContent(items: CollectedItem[], startDir: string): Promise<string> {
-  let mdContent = '';
+async function generateOutputContent(items: CollectedItem[], startDir: string): Promise<string> {
+  let content = '';
 
   for (const item of items) {
     const rel = path.relative(startDir, item.path);
 
     if (item.type === 'dir-assets-only') {
-      mdContent += '|===================|\n';
-      mdContent += `**Directory**: \`${rel}\`\n\n`;
-      mdContent += '> This directory contains only images/fonts (skipped).\n\n';
+      content += '|===================|\n';
+      content += `**Directory**: \`${rel}\`\n\n`;
+      content += '> This directory contains only images/fonts (skipped).\n\n';
     } else if (item.type === 'file') {
       let fileData: string;
 
@@ -164,15 +179,15 @@ async function generateMarkdownContent(items: CollectedItem[], startDir: string)
         throw err;
       }
 
-      mdContent += '|===================|\n';
-      mdContent += `**File**: \`${rel}\`\n\n`;
-      mdContent += '```\n';
-      mdContent += fileData;
-      mdContent += '\n```\n\n';
+      content += '|===================|\n';
+      content += `**File**: \`${rel}\`\n\n`;
+      content += '```\n';
+      content += fileData;
+      content += '\n```\n\n';
     }
   }
 
-  return mdContent;
+  return content;
 }
 
 async function main() {
@@ -186,6 +201,7 @@ async function main() {
   if (options.verbose) {
     console.log('Starting directory:', options.startDir);
     console.log('Output file path:', options.outputFilePath);
+    console.log('Output format:', options.format);
   }
 
   const gitignore = await parseGitignore(options.startDir);
@@ -200,14 +216,13 @@ async function main() {
     console.log('Collected items:', items);
   }
 
-  const mdContent = await generateMarkdownContent(items, options.startDir);
+  const outputContent = await generateOutputContent(items, options.startDir);
 
   try {
-    await fs.promises.writeFile(options.outputFilePath, mdContent, 'utf-8');
+    await fs.promises.writeFile(options.outputFilePath, outputContent, 'utf-8');
     console.log(chalk.cyan(`Done! File created: ${options.outputFilePath}`));
   } catch (err) {
     console.error(chalk.red('Error writing file:'), err);
-
     process.exit(1);
   }
 }

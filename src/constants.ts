@@ -2,6 +2,7 @@ import path from 'path';
 
 export const IGNORE_LIST = new Set<string>([
   'node_modules',
+  'dist',
   '.git',
   '.DS_Store',
   'README.md',
