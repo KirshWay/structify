@@ -75,14 +75,17 @@ In this mode, you will be prompted for:
 
 - **Project Directory:** The path to the project (default: current directory).
 - **Collection Mode:** Choose between collecting the entire project or a selective, multi-level selection.
-- **Output Settings:** Provide the name and destination directory for the generated Markdown file.
+-	**Output Settings**:
+	•	**Output File Name**: Enter the name of the output file **without an extension** (the extension will be added automatically based on your format selection).
+	•	**Output Directory**: The directory where the generated file will be saved.
+	•	**Output Format**: Select the desired output format from the available options (Markdown (.md) or Plain Text (.txt)).
 
 #### Non-Interactive Mode
 
 For automated or scripted usage, you can disable interactive prompts by using the `--no-interactive` flag along with the required options. For example:
 
 ```bash
-pnpm start --no-interactive --project /absolute/path/to/project --mode all --output structure.md --outdir /absolute/path/to/save
+pnpm start --no-interactive --project /absolute/path/to/project --mode all --output structure --outdir /absolute/path/to/save --format md
 ```
 
 **Options:**
@@ -90,8 +93,9 @@ pnpm start --no-interactive --project /absolute/path/to/project --mode all --out
 - `--no-interactive`: Disables interactive prompts.
 - `--project <path>`: Specifies the project directory to process.
 - `--mode <mode>`: Sets the collection mode. Use `all` to collect the entire project. _(Note: Non-interactive mode does not support partial selection.)_
-- `--output <filename>`: The name of the output Markdown file (default: `output.md`).
+- `--output <filename>`: The output file name **without an extension** (the tool will automatically append the appropriate extension based on the chosen format).
 - `--outdir <directory>`: The directory where the output file will be saved.
+-	`--format <format>`: The output file format, either md (Markdown) or txt (Plain Text).
 
 To view the full list of available CLI options, run:
 
