@@ -4,17 +4,20 @@ import inquirer from 'inquirer';
 import path from 'path';
 import { ASSET_EXTENSIONS, IGNORE_LIST, isEnvFile } from './constants.js';
 
-export type FileChoice = {
-  fullPath: string;
-  isDirectory: boolean;
-};
+export type FileChoice = string;
 
 type ChoiceItem = {
   name: string;
-  value: FileChoice;
+  value: string;
 };
 
-export async function interactiveSelectDirectory(dirPath: string): Promise<string[]> {
+const selectionCache = new Map<string, string[]>();
+
+export async function interactiveSelectDirectory(
+  dirPath: string,
+  rootDir: string = dirPath,
+  useCache: boolean = true,
+): Promise<string[]> {
   const results: string[] = [];
   let items;
 
@@ -26,6 +29,14 @@ export async function interactiveSelectDirectory(dirPath: string): Promise<strin
   }
 
   let choices: ChoiceItem[] = [];
+  const choicesMap = new Map<string, boolean>();
+
+  if (dirPath !== rootDir) {
+    choices.push({
+      name: chalk.yellow('.. (Go up)'),
+      value: 'UP',
+    });
+  }
 
   for (const item of items) {
     const name = item.name;
@@ -38,17 +49,16 @@ export async function interactiveSelectDirectory(dirPath: string): Promise<strin
       if (ASSET_EXTENSIONS.has(ext)) continue;
     }
 
+    choicesMap.set(fullPath, item.isDirectory());
     choices.push({
       name: item.isDirectory() ? chalk.blue(name + '/') : name,
-      value: { fullPath, isDirectory: item.isDirectory() },
+      value: fullPath,
     });
   }
 
   choices.sort((a, b) => a.name.localeCompare(b.name));
 
-  if (choices.length === 0) {
-    return results;
-  }
+  const defaultSelections = useCache ? selectionCache.get(dirPath) || [] : [];
 
   const { selected } = await inquirer.prompt<{ selected: FileChoice[] }>([
     {
@@ -56,16 +66,31 @@ export async function interactiveSelectDirectory(dirPath: string): Promise<strin
       type: 'checkbox',
       message: `Select items in "${path.basename(dirPath)}":`,
       choices,
+      default: defaultSelections,
+      pageSize: 20,
     },
   ]);
 
-  for (const choice of selected) {
-    if (choice.isDirectory) {
+  const selectedPaths = selected.filter((p) => p !== 'UP');
+  selectionCache.set(dirPath, selectedPaths);
+
+  for (const sel of selected) {
+    if (sel === 'UP') {
+      const parentDir = path.dirname(dirPath);
+
+      if (!parentDir.startsWith(rootDir)) continue;
+
+      selectionCache.delete(parentDir);
+
+      const parentSelections = await interactiveSelectDirectory(parentDir, rootDir, false);
+
+      results.push(...parentSelections);
+    } else if (choicesMap.get(sel)) {
       const { action } = await inquirer.prompt<{ action: 'all' | 'expand' }>([
         {
           name: 'action',
           type: 'list',
-          message: `Folder "${path.basename(choice.fullPath)}": take everything or expand?`,
+          message: `Folder "${path.basename(sel)}": take everything or expand?`,
           choices: [
             { name: 'Take everything', value: 'all' },
             { name: 'Expand (select inside)', value: 'expand' },
@@ -74,14 +99,13 @@ export async function interactiveSelectDirectory(dirPath: string): Promise<strin
       ]);
 
       if (action === 'all') {
-        results.push(choice.fullPath);
+        results.push(sel);
       } else {
-        const subSelections = await interactiveSelectDirectory(choice.fullPath);
-
+        const subSelections = await interactiveSelectDirectory(sel, rootDir);
         results.push(...subSelections);
       }
     } else {
-      results.push(choice.fullPath);
+      results.push(sel);
     }
   }
 
