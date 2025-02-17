@@ -3,6 +3,8 @@ import { Command } from 'commander';
 import figlet from 'figlet';
 import fs from 'fs';
 import inquirer from 'inquirer';
+import os from 'os';
+
 import path from 'path';
 import { CollectedItem, readDirectoryRecursive } from './gather.js';
 import { interactiveSelectDirectory } from './interactiveSelect.js';
@@ -32,7 +34,19 @@ Examples:
   .option('-p, --project <path>', 'Path to the project directory', process.cwd())
   .option('-m, --mode <mode>', 'Collection mode: "all" or "partial"', 'all')
   .option('-o, --output <filename>', 'Output file name', 'output')
-  .option('-d, --outdir <directory>', 'Directory to save the output file', process.cwd())
+  .option(
+    '-d, --outdir <directory>',
+    'Directory to save the output file',
+    (() => {
+      const downloads = path.join(os.homedir(), 'Downloads');
+      try {
+        fs.accessSync(downloads);
+        return downloads;
+      } catch {
+        return process.cwd();
+      }
+    })(),
+  )
   .option('-v, --verbose', 'Enable verbose logging', false)
   .option('--format <format>', 'Output format: txt or md', 'md')
   .option('--no-interactive', 'Disable interactive mode (use CLI options only)');
@@ -80,6 +94,16 @@ async function getInteractiveOptions(): Promise<Options> {
     whitelist = await interactiveSelectDirectory(startDir);
   }
 
+  const defaultOutDir = (() => {
+    const downloads = path.join(os.homedir(), 'Downloads');
+    try {
+      fs.accessSync(downloads);
+      return downloads;
+    } catch {
+      return process.cwd();
+    }
+  })();
+
   const { outputName, outputDir, format } = await inquirer.prompt<{
     outputName: string;
     outputDir: string;
@@ -88,14 +112,14 @@ async function getInteractiveOptions(): Promise<Options> {
     {
       name: 'outputName',
       type: 'input',
-      message: 'Name of the output file:',
+      message: 'Name of the output file :',
       default: 'output',
     },
     {
       name: 'outputDir',
       type: 'input',
       message: 'Where to save the final file?',
-      default: process.cwd(),
+      default: defaultOutDir,
     },
     {
       name: 'format',
